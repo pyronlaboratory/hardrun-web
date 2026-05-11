@@ -190,6 +190,10 @@ function show_infobox() {
     <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
 
     <style>
+        *:focus {
+            outline: none;
+        }
+        
         #status {
             display: inline-block;
             vertical-align: top;
@@ -251,6 +255,10 @@ function show_infobox() {
             bottom: 0;
             left: 0;
             right: 0;
+
+            display: block;
+            object-fit: contain;
+            aspect-ratio: 1280 / 720;
         }
 
         body {
@@ -258,6 +266,9 @@ function show_infobox() {
             margin: 0;
             padding: none;
             background-color: #1a1a2e;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
         }
 
         .topright{
@@ -313,18 +324,28 @@ function show_infobox() {
         </div>
     </div>
 
-
+    <canvas id="canvas_backdrop"
+    style="
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        z-index: 1;
+        filter: blur(12px) brightness(0.9);
+        transform: scale(1.05);
+        pointer-events: none;
+    ">
+    </canvas>
 
     <canvas class="emscripten" id="canvas"
-width="1px"
-height="1px"
-    oncontextmenu="event.preventDefault()" tabindex=1>
+        width="1px"
+        height="1px"
+        oncontextmenu="event.preventDefault()" tabindex=1>
     </canvas>
 
     <canvas class="emscripten" id="canvas3d"
-width="1280px"
-height="720px"
-    oncontextmenu="event.preventDefault()" tabindex=1 hidden>
+        width="1280px"
+        height="720px"
+        oncontextmenu="event.preventDefault()" tabindex=1 hidden>
     </canvas>
 
     <div id="infobox">Loading, please wait ...</div>
@@ -447,6 +468,31 @@ frameborder="1"
         window.frames["iframe"].location = url;
     }
 
+    function startBackdropMirror() {
+        const src = document.getElementById("canvas");
+        const dst = document.getElementById("canvas_backdrop");
+        const ctx = dst.getContext("2d");
+
+        function mirror() {
+            if (src.width > 1 && src.height > 1) {
+                dst.width  = src.width;
+                dst.height = src.height;
+                ctx.drawImage(src, 0, 0);
+            }
+            requestAnimationFrame(mirror);
+        }
+        mirror();
+    }
+
+    // Wait for the game canvas to be live before starting
+    const observer = new MutationObserver(() => {
+        const c = document.getElementById("canvas");
+        if (c && c.width > 1) {
+            observer.disconnect();
+            startBackdropMirror();
+        }
+    });
+    observer.observe(document.body, { subtree: true, attributes: true });
     </script>
 
 </body>
